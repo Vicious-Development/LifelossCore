@@ -48,11 +48,10 @@ public class LLCommands {
                                 ))
                         .then(Commands.literal("invite")
                                 .then(Commands.literal("accept")
-                                        .executes((ctx)->acceptInvite(ctx.getSource()))
+                                        .executes((ctx)->acceptInvite(ctx.getSource())))
                                 .then(Commands.literal("send")
-                                        .then(Commands.argument("targets",EntityArgument.players()))
-                                        .executes((ctx)->sendInvites(EntityArgument.getPlayers(ctx, "targets"),ctx.getSource())))
-                                )
+                                        .then(Commands.argument("targets",EntityArgument.players())
+                                        .executes((ctx)->sendInvites(EntityArgument.getPlayers(ctx, "targets"),ctx.getSource()))))
                         )
                         .then(Commands.literal("info")
                                 .executes(ctx->sendTeamInfo(ctx.getSource()))
@@ -65,7 +64,21 @@ public class LLCommands {
                                         .then(Commands.literal("delete")
                                                 .executes((ctx)->deleteTeam(StringArgumentType.getString(ctx,"team"),ctx.getSource())))
                                         .then(Commands.literal("join")
-                                                .executes(ctx->joinTeam(ctx.getSource(),StringArgumentType.getString(ctx,"team"))))
+                                                .executes(ctx->joinTeam(ctx.getSource(),StringArgumentType.getString(ctx,"team")))
+                                                .then(Commands.argument("targets",EntityArgument.players())
+                                                        .executes(ctx->{
+                                                            String team = StringArgumentType.getString(ctx,"team");
+                                                            Team t = TeamManager.getTeam(team);
+                                                            if(t != null){
+                                                                for (ServerPlayer target : EntityArgument.getPlayers(ctx, "targets")) {
+                                                                    t.addMember(target);
+                                                                }
+                                                            }
+                                                            else{
+                                                                noSuchTeam(team,ctx.getSource());
+                                                            }
+                                                            return 1;
+                                                        })))
                                         .then(Commands.literal("kick")
                                                 .then(Commands.argument("targets", GameProfileArgument.gameProfile())
                                                         .executes(ctx->kickMembers(ctx.getSource(),StringArgumentType.getString(ctx,"team"),GameProfileArgument.getGameProfiles(ctx,"targets")))))
@@ -89,7 +102,7 @@ public class LLCommands {
                                                 String name = StringArgumentType.getString(ctx, "feature");
                                                 TrackableValue<?> v = LLCFG.getInstance().values.get(name);
                                                 if (v == null) {
-                                                    LifelossChatMessage.from(ChatFormatting.RED, "<1lifeloss.nosuchconfigvalue>", name);
+                                                    LifelossChatMessage.from(ChatFormatting.RED, "<1lifeloss.nosuchconfigvalue>", name).send(ctx.getSource());
                                                 } else {
                                                     try {
                                                         v.setFromStringWithUpdate(StringArgumentType.getString(ctx, "newvalue"));

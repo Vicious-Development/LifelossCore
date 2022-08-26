@@ -43,7 +43,7 @@
   "lifeloss.joinedteam": "%1$s joined the team!",
   "lifeloss.noteaminvite": "You don't have a team invite.",
   "lifeloss.commandneedsteam": "You need a team to use this command.",
-  "lifeloss.teaminvitereceived": "You have been invited to team: %1$s",
+  "lifeloss.teaminvitereceived": "You have been invited to team: %1$s, use '/lifeloss team invite accept' to accept it!",
   "lifeloss.createdemptyteam": "You have created empty team: %1$s",
   "lifeloss.createdteam": "%1$s created team: %2$s",
   "lifeloss.nosuchteam": "The team '%1$s' does not exist.",
