@@ -7,10 +7,11 @@
   "mixins": [
     "viciouscoredata.MixinSyncableAttachableCompound",
     "viciouscoredata.MixinSyncableCompound",
-    "viciouscoredata.MixinSyncablePlayerData",
-    "viciouscoredata.MixinSyncableGlobalData"
+    "viciouscoredata.MixinSyncableGlobalData",
+    "viciouscoredata.MixinSyncablePlayerData"
   ],
   "client": [
+    "forge.MixinForgeGUI"
   ],
   "injectors": {
     "defaultRequire": 1

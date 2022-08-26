@@ -28,15 +28,31 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Team implements IVCNBTSerializable {
     private final Set<UUID> members = new HashSet<>();
     private final Set<ServerPlayer> onlineMembers = new HashSet<>();
     private BlockPos avg = new BlockPos(0,0,0);
-    private GraceState graceState = new Cooldown(0);
     private String name;
     private UUID uuid;
+    private Grace grace = new Grace(GraceReason.INIT,0);
+    private GraceCooldown graceCooldown = new GraceCooldown(0);
+
+    public void onGraceEnd(Grace grace){
+        if(grace.getReason() != GraceReason.INIT) {
+            graceCooldown = new GraceCooldown(LLCFG.getInstance().healthLossGraceCooldown.value());
+            BetterChatMessage graceWarning = !grace.safe ? LifelossChatMessage.from(ChatFormatting.RED, "<1lifeloss.graceremoved>", graceCooldown.getTimeRemaining()/20) : LifelossChatMessage.from(ChatFormatting.GREEN, "<1lifeloss.graceremovedsafe>", graceCooldown.getTimeRemaining()/20);
+            BetterChatMessage warning = LifelossChatMessage.from(ChatFormatting.RED, "<lifeloss.healthdraining>");
+            for (ServerPlayer m : onlineMembers) {
+                graceWarning.send(m);
+                if (!isWithinSafeZone(m)) {
+                    if(!grace.safe) warning.send(m);
+                }
+            }
+        }
+    }
 
     public Team(){}
     public Team(String name){
@@ -63,93 +79,38 @@ public class Team implements IVCNBTSerializable {
         distCalc();
         distanceFairnessCheck(plr,GraceReason.DEATH);
     }
-    public int getExceededDistance(ServerPlayer plr){
-        int multiplier = DimensionalDistanceCalculator.getMultiplier(plr.getLevel());
-        BlockPos p = new BlockPos(avg.getX()*multiplier,avg.getY()*multiplier,avg.getZ()*multiplier);
-        return (int) Math.sqrt(p.distToCenterSqr(plr.position())-LLCFG.getInstance().healthLossStart.value());
-    }
     public void distanceFairnessCheck(ServerPlayer plr, GraceReason reason){
         int exceeded = getExceededDistance(plr);
         if(exceeded > 0){
-            grace(new GraceState(reason,exceeded),plr);
+            setGrace(new Grace(reason,exceeded, this::onGraceEnd),plr);
         }
     }
-    public void grace(GraceState state, ServerPlayer causer){
-        if(graceState.reason.force() || !(graceState instanceof Cooldown)){
-            graceState = state;
-            if(!graceState.hasEnded()){
-                state.getReason().getMessage(causer,state.time/20).send(onlineMembers);
-            }
-        }
+    public int getExceededDistance(ServerPlayer plr){
+        int multiplier = DimensionalDistanceCalculator.getMultiplier(plr.getLevel());
+        BlockPos p = new BlockPos(avg.getX()/multiplier,avg.getY()/multiplier,avg.getZ()/multiplier);
+        return (int) Math.sqrt(p.distToCenterSqr(plr.position()))-LLCFG.getInstance().healthLossStart.value();
     }
 
     public boolean isWithinSafeZone(ServerPlayer plr){
         return getExceededDistance(plr) > 0;
     }
 
+    public boolean hasGrace(){
+        return graceCooldown.hasEnded() && !grace.hasEnded();
+    }
+
+    public void setGrace(Grace g, ServerPlayer causer){
+        grace = g;
+        g.getReason().getMessage(causer,g.getTimeRemaining()).send(onlineMembers);
+    }
 
     public void tick() {
         //Calculate centerpoint.
-        distCalc();
-
-        //Check if the grace period has ended, send a warning informing all members. Alert members out of the zone their health is being reduced.
-        if(graceState.hasEnded()){
-            if(!(graceState instanceof Cooldown)){
-                graceState = new Cooldown(LLCFG.getInstance().healthLossGraceCooldown.value()*20);
-                BetterChatMessage graceWarning = LifelossChatMessage.from(ChatFormatting.RED,ChatFormatting.BOLD,"<lifeloss.graceremoved>");
-                BetterChatMessage warning = LifelossChatMessage.from(ChatFormatting.DARK_RED,ChatFormatting.BOLD,"<lifeloss.healthdraining>");
-                for (ServerPlayer m : onlineMembers) {
-                    graceWarning.send(m);
-                    if(!isWithinSafeZone(m)){
-                        warning.send(m);
-                    }
-                }
-            }
-
-        }
-        //Tick the cooldown/grace period.
-        else{
-            graceState.tick();
-        }
-
-        //Check the distances of all players.
-        //If they have exceeded the maximum distance prevent removal of the current grace period.
-        //Reduce the health of those outside the region.
-        boolean removeGrace = true;
-        for(ServerPlayer m : onlineMembers){
-            int exceeded = getExceededDistance(m);
-            if(exceeded > 0){
-                if(m.gameMode.isSurvival()) {
-                    grace(new GraceState(GraceReason.OUTOFBOUNDS, exceeded), m);
-                    if (graceState.noGrace()) {
-                        healthCalc(m, exceeded);
-                    }
-                    removeGrace = false;
-                }
-            }
-            else{
-                AttributeInstance maxhp = m.getAttribute(Attributes.MAX_HEALTH);
-                if(maxhp != null) maxhp.removeModifier(((ILLGlobalData) SyncableGlobalData.getInstance()).getMaxHealthAttributeModUUID());
-            }
-        }
-        if(removeGrace && !(graceState instanceof Cooldown)){
-            LifelossChatMessage.from(ChatFormatting.RED,ChatFormatting.BOLD,"<lifeloss.graceremovedsafe>");
-            graceState = new Cooldown(LLCFG.getInstance().healthLossGraceCooldown.value());
-        }
-    }
-
-    public void distCalc(){
-        if(onlineMembers.size() == 0) return;
         BlockPos og = avg;
-        BlockPos newAvg = new BlockPos(0,0,0);
-        for (ServerPlayer m : onlineMembers) {
-            if(m.isAlive()  && m.gameMode.isSurvival()) {
-                newAvg = newAvg.offset(DimensionalDistanceCalculator.calculateTruePos(new WorldPos(m.getLevel(), new BlockPos(m.getBlockX(), m.getBlockY(), m.getBlockZ()))));
-            }
-        }
-        avg = new BlockPos(newAvg.getX()/onlineMembers.size(),newAvg.getY()/onlineMembers.size(),newAvg.getZ()/onlineMembers.size());
+        distCalc();
         if(og != avg){
             CPacketSendTeamCenter p = new CPacketSendTeamCenter(avg);
+            boolean allSafe = true;
             for (ServerPlayer plr : onlineMembers) {
                 int mult = DimensionalDistanceCalculator.getMultiplier(plr.getLevel());
                 if(mult == 1) {
@@ -158,14 +119,52 @@ public class Team implements IVCNBTSerializable {
                 else{
                     LLNetwork.getInstance().sendToPlayer(plr, new CPacketSendTeamCenter(new BlockPos(avg.getX()/mult,avg.getY()/mult,avg.getZ()/mult)));
                 }
+                int exceeded = getExceededDistance(plr);
+                if(exceeded > 0){
+                    allSafe = false;
+                    if(graceCooldown.hasEnded() && graceCooldown.shouldEnd && grace.hasEnded()){
+                       setGrace(new Grace(GraceReason.OUTOFBOUNDS,exceeded, this::onGraceEnd),plr);
+                    }
+                    if(!hasGrace()) {
+                        healthCalc(plr, exceeded);
+                    }
+                }
+                else{
+                    AttributeInstance maxhp = plr.getAttribute(Attributes.MAX_HEALTH);
+                    if(maxhp != null) maxhp.removeModifier(((ILLGlobalData) SyncableGlobalData.getInstance()).getMaxHealthAttributeModUUID());
+                }
+            }
+            if(allSafe){
+                grace.remaining=0;
+            }
+            grace.safe=allSafe;
+            graceCooldown.shouldEnd=allSafe;
+        }
+        if(!grace.hasEnded()){
+            grace.tick();
+        }
+        if(!graceCooldown.hasEnded()){
+            graceCooldown.tick();
+        }
+    }
+
+    public void distCalc(){
+        BlockPos newAvg = new BlockPos(0,0,0);
+        int num = 0;
+        for (ServerPlayer m : onlineMembers) {
+            if(m.isAlive()  && m.gameMode.isSurvival()) {
+                newAvg = newAvg.offset(DimensionalDistanceCalculator.calculateTruePos(new WorldPos(m.getLevel(), new BlockPos(m.getBlockX(), m.getBlockY(), m.getBlockZ()))));
+                num++;
             }
         }
+        if(num == 0) return;
+        avg = new BlockPos(newAvg.getX()/num,newAvg.getY()/num,newAvg.getZ()/num);
     }
 
     public void healthCalc(ServerPlayer member, int exceeded){
         AttributeInstance maxhp = member.getAttribute(Attributes.MAX_HEALTH);
         double percentage = (double) 1/Math.pow(LLCFG.getInstance().healthLossMultiplier.value(),exceeded);
-        DistanceHealthModifier mod = new DistanceHealthModifier(percentage);
+        DistanceHealthModifier mod = new DistanceHealthModifier(-(1F-percentage));
         maxhp.removeModifier(mod.getId());
         maxhp.addTransientModifier(mod);
     }
@@ -198,6 +197,7 @@ public class Team implements IVCNBTSerializable {
         removeMember(sp.getUUID());
         SyncablePlayerData.executeIfPresent(sp,(pd)-> pd.setTeamID(null),ILLPlayerData.class);
         onlineMembers.remove(sp);
+        LLNetwork.getInstance().sendToPlayer(sp,new CPacketTeamInfo());
     }
     public void removeMember(UUID uuid){
         members.remove(uuid);
@@ -246,33 +246,6 @@ public class Team implements IVCNBTSerializable {
         return onlineMembers;
     }
 
-    private static class GraceState{
-        public static final GraceState NONE = new GraceState(GraceReason.OUTOFBOUNDS,0);
-        protected GraceReason reason;
-        protected int time;
-        public GraceState(GraceReason reason, int distance){
-            this.reason=reason;
-            this.time=reason.getGraceTime(distance);
-        }
-        protected GraceState(){}
-        public void tick(){
-            time--;
-        }
-        public void end(){
-            time=0;
-        }
-        public boolean hasEnded(){
-            return time <= 0;
-        }
-        public GraceReason getReason(){
-            return reason;
-        }
-
-        public boolean noGrace() {
-            return this instanceof Cooldown || hasEnded();
-        }
-    }
-
     @Override
     public String toString() {
         return "Team{" +
@@ -282,18 +255,12 @@ public class Team implements IVCNBTSerializable {
                 '}';
     }
 
-    private static class Cooldown extends GraceState{
-        public Cooldown(int time) {
-            reason=GraceReason.ADMIN;
-            this.time=time;
-        }
-    }
-
     private enum GraceReason{
         LOGIN("<2lifeloss.logingrace>",(i)->LLCFG.getInstance().healthLossTeleportGrace.value()*i),
         DEATH("<2lifeloss.deathgrace>",(i)->LLCFG.getInstance().healthLossTeleportGrace.value()*i),
-        OUTOFBOUNDS("<2lifeloss.oobgrace>",(i)->LLCFG.getInstance().healthLossGrace.value()*20),
-        ADMIN("<2lifeliss.admingrace>",(i)->i);
+        OUTOFBOUNDS("<2lifeloss.oobgrace>",(i)->LLCFG.getInstance().healthLossGrace.value()),
+        ADMIN("<2lifeloss.admingrace>",(i)->i),
+        INIT("<lifeloss.illegal>",(i)->0);
         final String translationKey;
         final Function<Integer,Integer> timeFunc;
         GraceReason(String key, Function<Integer,Integer> graceTimeFunc){
@@ -303,12 +270,64 @@ public class Team implements IVCNBTSerializable {
         public int getGraceTime(int dist){
             return timeFunc.apply(dist);
         }
-        public BetterChatMessage getMessage(ServerPlayer causer, int time){
-            return LifelossChatMessage.from(ChatFormatting.GOLD,ChatFormatting.BOLD, translationKey, causer.getDisplayName(),"" + time);
+        public BetterChatMessage getMessage(ServerPlayer causer, int timeTicks){
+            return LifelossChatMessage.from(ChatFormatting.GOLD,ChatFormatting.BOLD, translationKey, causer.getDisplayName(),"" + timeTicks/20);
         }
 
         public boolean force() {
-            return this == LOGIN || this == DEATH;
+            return this == LOGIN || this == DEATH || this == ADMIN;
+        }
+    }
+    private static class Grace{
+        private int remaining = 0;
+        private boolean ended = false;
+        private Consumer<Grace> onEnd = (g)->{};
+        private GraceReason reason = GraceReason.ADMIN;
+        private boolean safe = false;
+        public Grace(GraceReason reason, int exceeded){
+            if(reason != null) this.reason = reason;
+            this.remaining = this.reason.getGraceTime(exceeded);
+        }
+        public Grace(GraceReason reason, int exceeded, Consumer<Grace> onEnd){
+            if(reason != null) this.reason = reason;
+            this.remaining = this.reason.getGraceTime(exceeded);
+            this.onEnd=onEnd;
+        }
+        public GraceReason getReason(){
+            return reason;
+        }
+        public int getTimeRemaining(){
+            return remaining;
+        }
+        public void tick(){
+            remaining--;
+        }
+        public boolean hasEnded(){
+            boolean ret = remaining <= 0;
+            if(ended != ret){
+                onEnd.accept(this);
+            }
+            ended = ret;
+            return ended;
+        }
+        public boolean forceGrace(){
+            return reason.force();
+        }
+    }
+    private static class GraceCooldown{
+        private int remaining = 0;
+        private boolean shouldEnd = true;
+        public GraceCooldown(int time){
+            this.remaining = time;
+        }
+        public int getTimeRemaining(){
+            return remaining;
+        }
+        public void tick(){
+            remaining--;
+        }
+        public boolean hasEnded(){
+            return remaining <= 0;
         }
     }
 }

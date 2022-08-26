@@ -41,4 +41,13 @@ public class ClientData {
         if(Minecraft.getInstance().player == null) return 0;
         else return Minecraft.getInstance().player.getMaxHealth();
     }
+
+    public static void reset() {
+        activeServerFlags = EnumSet.noneOf(LLFlag.class);
+        lives = 0;
+        centerPosition = new BlockPos(0,0,0);
+        teamName = null;
+        distToCenter = 0;
+        lossStart = -1;
+    }
 }

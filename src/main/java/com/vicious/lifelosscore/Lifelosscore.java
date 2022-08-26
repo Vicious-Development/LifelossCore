@@ -1,6 +1,7 @@
 package com.vicious.lifelosscore;
 
 import com.mojang.logging.LogUtils;
+import com.vicious.lifelosscore.client.gui.ClientData;
 import com.vicious.lifelosscore.client.gui.GUIRegistry;
 import com.vicious.lifelosscore.common.LLCFG;
 import com.vicious.lifelosscore.common.LLCommands;
@@ -21,6 +22,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.network.NetworkEvent;
 import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,5 +86,11 @@ public class Lifelosscore {
     @SubscribeEvent
     public void onServerStopping(ServerStoppingEvent event){
         LLCFG.getInstance().save();
+    }
+
+    @SubscribeEvent
+    public void clientJoinWorld(NetworkEvent.ClientCustomPayloadLoginEvent ev){
+        ClientData.reset();
+
     }
 }

@@ -24,9 +24,11 @@
   "lifeloss.logingrace": "%1$s has logged in too far from the other teammates, %2$s seconds of gracetime has been granted to ensure they will return safely.",
   "lifeloss.deathgrace": "%1$s has died and respawned too far from the other teammates, %2$s seconds of gracetime has been granted to ensure they will return safely.",
   "lifeloss.admingrace": "%1$s has given your team %2$s seconds of gracetime! Make those seconds count!",
-  "lifeloss.graceremovedsafe": "All players are within safe distance of each other, your grace period has been removed.",
-  "lifeloss.graceremoved": "Your health loss grace period has ended!",
+  "lifeloss.graceremovedsafe": "All players are within safe distance of each other, your grace period has been removed. It is now on cooldown for %1$s seconds!",
+  "lifeloss.graceremoved": "Your health loss grace period has ended! It is now on cooldown for %1$s seconds!",
   "lifeloss.healthdraining": "You are too far from your teammates! You are now suffering health loss!",
+
+  "lifeloss.illegal": "Unexpected Chat message sent.",
 
   "lifeloss.givelife": "You gave %1$s a life.",
   "lifeloss.givelives": "You gave %1$s %2$s lives.",

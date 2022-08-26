@@ -13,6 +13,10 @@ public class CPacketTeamInfo extends LLPacket {
         teamName=t.getName();
     }
 
+    public CPacketTeamInfo() {
+        teamName="";
+    }
+
     @Override
     public boolean handleOnClient() {
         return true;

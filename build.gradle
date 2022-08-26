@@ -24,7 +24,7 @@ String archivesBaseName = 'lifelosscore'
 String projectver = '1.0.0'
 String organization = 'vicious'
 String gitlink = "github.com/Vicious-MCModding/LifelossCore"
-String vcver = "3.2.2"
+String vcver = "3.2.4"
 
 java {
     archivesBaseName = 'lifelosscore'
