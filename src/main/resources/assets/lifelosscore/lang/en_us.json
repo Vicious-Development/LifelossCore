@@ -1,0 +1,57 @@
+{
+  "death.attack.soulshatter": "%1$s was soul was shattered by %2$s",
+  "lifeloss.soulweaknessabsolution": "Your soul weakness has reached unbearable levels! Death is imminent!",
+  "lifeloss.lifelost":"",
+  "lifeloss.backfromthegrave":"You have been resurrected from the grave!",
+  "lifeloss.soulweaknessuncurable":"Your soul weakness can only be cured with time.",
+  "lifeloss.totemlifeloss":"Although your totem has shattered, you still feel like a part of you has broken with it. Minus 1 life",
+  "lifeloss.othertotemlifeloss": "%1$s lost a life but was resurrected by a totem!",
+  "lifeloss.gotsoulweakness": "Without a life to lose your soul temporarily weakens!",
+  "lifeloss.totemantipermadeath": "%1$s's totem saved them from permanent death!",
+  "lifeloss.playerkill": "%1$s's life was taken by: %2$s",
+  
+  "lifeloss.livesleft": "You have %1$s lives left.",
+  "lifeloss.otherlostlife": "%1$s lost a life.",
+
+  "lifeloss.otherhaunt": "%1$s has lost all lives and became a ghost!",
+  "lifeloss.selfhaunt": "You are dead and will haunt this world!",
+
+  "lifeloss.kyracauser": "Your death has punished the everyone to an eternity of haunting!",
+  "lifeloss.kyrapunishment": " has ended the lives of the many by dying themselves!",
+
+  "lifeloss.hauntonjoin": "You are dead and will haunt this world!",
+  "lifeloss.oobgrace": "%1$s has strayed too far from the other teammates! You might begin to suffer health loss in: %2$s seconds!",
+  "lifeloss.logingrace": "%1$s has logged in too far from the other teammates, %2$s seconds of gracetime has been granted to ensure they will return safely.",
+  "lifeloss.deathgrace": "%1$s has died and respawned too far from the other teammates, %2$s seconds of gracetime has been granted to ensure they will return safely.",
+  "lifeloss.admingrace": "%1$s has given your team %2$s seconds of gracetime! Make those seconds count!",
+  "lifeloss.graceremovedsafe": "All players are within safe distance of each other, your grace period has been removed.",
+  "lifeloss.graceremoved": "Your health loss grace period has ended!",
+  "lifeloss.healthdraining": "You are too far from your teammates! You are now suffering health loss!",
+
+  "lifeloss.givelife": "You gave %1$s a life.",
+  "lifeloss.givelives": "You gave %1$s %2$s lives.",
+
+  "lifeloss.seelivesself": "You have %1$s lives.",
+  "lifeloss.seelivesother": "%1$s has %2$s lives.",
+  "lifeloss.onlyplayercommand": "Only players can use this command.",
+
+  "lifeloss.onlyoneteam": "You can only be in one team at a time.",
+  "lifeloss.leftteam": "%1$s has left the team!",
+  "lifeloss.kickedteam": "%1$s was kicked from the team by %2$s!",
+  "lifeloss.joinedteam": "%1$s joined the team!",
+  "lifeloss.noteaminvite": "You don't have a team invite.",
+  "lifeloss.commandneedsteam": "You need a team to use this command.",
+  "lifeloss.teaminvitereceived": "You have been invited to team: %1$s",
+  "lifeloss.createdemptyteam": "You have created empty team: %1$s",
+  "lifeloss.createdteam": "%1$s created team: %2$s",
+  "lifeloss.nosuchteam": "The team '%1$s' does not exist.",
+  "lifeloss.deletedteam": "%1$s deleted team: %2$s",
+  "lifeloss.teamgone": "Your team was probably deleted and no longer exists.",
+  "lifeloss.notinteam": "%1$s is not in team %2$s.",
+  "lifeloss.nolongerinteam": "You are no longer in team %1$s, you were probably kicked :(",
+  "lifeloss.teamexists": "A team named %1$s already exists.",
+
+  "lifeloss.nosuchconfigvalue": "%1$s does not exist.",
+  "lifeloss.invalidstring": "The string you provided cannot be applied to the config value."
+
+}
