@@ -42,6 +42,7 @@ public class TeamManager {
                     }
                     else{
                         LifelossChatMessage.from(ChatFormatting.RED,"<1lifeloss.nolongerinteam>",t.getName()).send(sp);
+                        pd.setTeamID(null);
                     }
                 }
                 else if(pd.getTeamID() != null){

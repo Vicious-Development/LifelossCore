@@ -194,8 +194,8 @@ public class Team implements IVCNBTSerializable {
         removeMember(sp);
     }
     public void removeMember(ServerPlayer sp){
-        removeMember(sp.getUUID());
         SyncablePlayerData.executeIfPresent(sp,(pd)-> pd.setTeamID(null),ILLPlayerData.class);
+        removeMember(sp.getUUID());
         onlineMembers.remove(sp);
         LLNetwork.getInstance().sendToPlayer(sp,new CPacketTeamInfo());
     }

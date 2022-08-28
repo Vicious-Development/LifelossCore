@@ -22,9 +22,9 @@ public class LifelossOverlay implements IGuiOverlay {
     //private final WidgetRectangle distanceFromCenter = root.addChild(new WidgetRectangle(root,0,0, 20,10,Color.CYAN.getRGB(),0.5F));
     private final WidgetRectangularBorder border = root.addChild(new WidgetRectangularBorder(root,2,2,0,0,Color.BLACK.getRGB(),0f,3));
     private final WidgetVerticalList list = border.addChild(new WidgetVerticalList(root,3,3,0,0));
-    private final LivesTextBox lives = list.addChild(new LivesTextBox(root,0,0,Color.BLUE.getRGB(),Color.BLUE.getRGB(),0.5f,0.75f));
-    private final TeamTextBox team = list.addChild(new TeamTextBox(root,0,0,Color.BLUE.getRGB(),Color.BLUE.getRGB(),0.5f,0.75f));
-    private final HPTextBox hp = list.addChild(new HPTextBox(root,0,0,Color.BLUE.getRGB(),Color.BLUE.getRGB(),0.5f,0.75f));
+    private final LivesTextBox lives = list.addChild(new LivesTextBox(root,0,0,Color.BLACK.getRGB(),Color.BLACK.getRGB(),0.5f,0.75f));
+    private final TeamTextBox team = list.addChild(new TeamTextBox(root,0,0,Color.BLACK.getRGB(),Color.BLACK.getRGB(),0.5f,0.75f));
+    private final HPTextBox hp = list.addChild(new HPTextBox(root,0,0,Color.BLACK.getRGB(),Color.BLACK.getRGB(),0.5f,0.75f));
     public final DistanceMeter distance = list.addChild(new DistanceMeter(root,0,0,Color.BLACK.getRGB(),0.5f,0.75f));
 
     public LifelossOverlay(){
