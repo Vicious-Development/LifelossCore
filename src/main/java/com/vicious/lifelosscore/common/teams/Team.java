@@ -14,6 +14,7 @@ import com.vicious.viciouscore.common.data.implementations.attachable.SyncableGl
 import com.vicious.viciouscore.common.data.implementations.attachable.SyncablePlayerData;
 import com.vicious.viciouscore.common.phantom.WorldPos;
 import com.vicious.viciouscore.common.util.server.BetterChatMessage;
+import com.vicious.viciouscore.common.util.server.ServerHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -36,6 +37,7 @@ public class Team implements IVCNBTSerializable {
     private final Set<ServerPlayer> onlineMembers = new HashSet<>();
     private BlockPos avg = new BlockPos(0,0,0);
     private String name;
+    private UUID owner = null;
     private UUID uuid;
     private Grace grace = new Grace(GraceReason.INIT,0);
     private GraceCooldown graceCooldown = new GraceCooldown(0);
@@ -147,12 +149,25 @@ public class Team implements IVCNBTSerializable {
             graceCooldown.tick();
         }
     }
+    public void setOwner(GameProfile profile){
+        UUID preOwner = owner;
+        this.owner=profile.getId();
+        updatePlayerCommands(profile.getId());
+        if(preOwner != null) updatePlayerCommands(preOwner);
+        LifelossChatMessage.from(ChatFormatting.GREEN,"<1lifeloss.ownerchanged>",profile.getName()).send(onlineMembers);
+    }
+    public void updatePlayerCommands(UUID id){
+        ServerPlayer plr = ServerHelper.server.getPlayerList().getPlayer(id);
+        if(plr != null) {
+            ServerHelper.server.getCommands().sendCommands(plr);
+        }
+    }
 
     public void distCalc(){
         BlockPos newAvg = new BlockPos(0,0,0);
         int num = 0;
         for (ServerPlayer m : onlineMembers) {
-            if(m.isAlive()  && m.gameMode.isSurvival()) {
+            if(m.isAlive() && m.gameMode.isSurvival()) {
                 newAvg = newAvg.offset(DimensionalDistanceCalculator.calculateTruePos(new WorldPos(m.getLevel(), new BlockPos(m.getBlockX(), m.getBlockY(), m.getBlockZ()))));
                 num++;
             }
@@ -201,6 +216,9 @@ public class Team implements IVCNBTSerializable {
     }
     public void removeMember(UUID uuid){
         members.remove(uuid);
+        if(members.isEmpty()){
+            TeamManager.deleteTeam(this);
+        }
     }
 
     public String getName() {
@@ -219,6 +237,7 @@ public class Team implements IVCNBTSerializable {
             i++;
         }
         tag.put("m",listTag);
+        tag.putString("o", owner != null ? owner.toString() : "");
         nbt.put("team",tag);
     }
 
@@ -227,11 +246,28 @@ public class Team implements IVCNBTSerializable {
         nbt = nbt.getCompound("team");
         name = nbt.getString("n");
         uuid = nbt.getUUID("i");
+        //1.0.2 Datafix
+        String owner = nbt.getString("o");
+        if(!owner.isEmpty()){
+            this.owner = UUID.fromString(owner);
+        }
         nbt = nbt.getCompound("m");
         for (String m : nbt.getAllKeys()) {
             members.add(nbt.getUUID(m));
         }
-
+        datafix102();
+    }
+    //1.0.2 Datafix, adds team owners.
+    private void datafix102(){
+        if(this.owner == null){
+            UUID[] id = members.toArray(new UUID[0]);
+            if(id.length == 0){
+                TeamManager.deleteTeam(this);
+            }
+            else{
+                this.owner=id[0];
+            }
+        }
     }
 
     public Set<UUID> getMembers() {
@@ -253,6 +289,10 @@ public class Team implements IVCNBTSerializable {
                 ", name='" + name + '\'' +
                 ", uuid=" + uuid +
                 '}';
+    }
+
+    public UUID getOwner() {
+        return owner;
     }
 
     private enum GraceReason{

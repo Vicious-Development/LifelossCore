@@ -1,18 +1,19 @@
 package com.vicious.lifelosscore.common.teams;
 
 import com.vicious.viciouscore.common.phantom.WorldPos;
-import com.vicious.viciouscore.common.util.server.ServerHelper;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.world.level.dimension.DimensionType;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class DimensionalDistanceCalculator {
-    public static final Map<String,Integer> distanceMultipliers = new HashMap<>();
+    public static final Map<ResourceKey<DimensionType>,Integer> distanceMultipliers = new HashMap<>();
     static{
-        distanceMultipliers.put(Level.NETHER.location().toString(),8);
+        distanceMultipliers.put(BuiltinDimensionTypes.NETHER, 8);
     }
 
     public static BlockPos calculateTruePos(WorldPos pos) {
@@ -23,8 +24,7 @@ public class DimensionalDistanceCalculator {
     }
 
     public static int getMultiplier(ServerLevel l){
-        String key = ServerHelper.getLevelName(l);
-        Integer i = distanceMultipliers.get(key);
+        Integer i = distanceMultipliers.get(l.dimensionTypeId());
         if(i == null) return 1;
         return i;
     }

@@ -1,9 +1,12 @@
 package com.vicious.lifelosscore.api;
 
+import com.vicious.lifelosscore.common.teams.Team;
+import com.vicious.lifelosscore.common.teams.TeamManager;
 import com.vicious.viciouscore.common.capability.VCCapabilities;
 import com.vicious.viciouscore.common.data.implementations.attachable.SyncableGlobalData;
 import com.vicious.viciouscore.common.util.FuckLazyOptionals;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.UUID;
@@ -17,6 +20,15 @@ public interface ILLPlayerData {
         }
         //Technically all non-players belong to the hypothetical team: "Minecraft".
         return true;
+    }
+
+    static boolean ownsTeam(CommandSourceStack src) {
+        if(src.getEntity() instanceof ServerPlayer sp){
+            Team t = TeamManager.getTeam(ILLPlayerData.get(sp).getTeamID());
+            if(t == null) return false;
+            return sp.getUUID().equals(t.getOwner());
+        }
+        return false;
     }
 
     UUID getTeamInvite();

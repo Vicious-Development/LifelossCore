@@ -7,7 +7,7 @@ import net.minecraft.network.chat.MutableComponent;
 import java.util.List;
 
 public class LifelossChatMessage extends BetterChatMessage {
-    private LifelossChatMessage(List<Object> objects) {
+    public LifelossChatMessage(List<Object> objects) {
         this(objects.toArray());
     }
 

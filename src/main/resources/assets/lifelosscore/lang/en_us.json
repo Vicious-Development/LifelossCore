@@ -43,7 +43,8 @@
   "lifeloss.joinedteam": "%1$s joined the team!",
   "lifeloss.noteaminvite": "You don't have a team invite.",
   "lifeloss.commandneedsteam": "You need a team to use this command.",
-  "lifeloss.teaminvitereceived": "You have been invited to team: %1$s, use '/lifeloss team invite accept' to accept it!",
+  "lifeloss.teaminvitereceived": "%1$s has invited you to team: %2$s, use '/lifeloss team invite accept' to accept it!",
+  "lifeloss.teaminvitesent": "%1$s has invited %2$s to the team!",
   "lifeloss.createdemptyteam": "You have created empty team: %1$s",
   "lifeloss.createdteam": "%1$s created team: %2$s",
   "lifeloss.nosuchteam": "The team '%1$s' does not exist.",
@@ -52,6 +53,7 @@
   "lifeloss.notinteam": "%1$s is not in team %2$s.",
   "lifeloss.nolongerinteam": "You are no longer in team %1$s, you were probably kicked :(",
   "lifeloss.teamexists": "A team named %1$s already exists.",
+  "lifeloss.ownerchanged": "%1$s is now the team leader!",
 
   "lifeloss.nosuchconfigvalue": "%1$s does not exist.",
   "lifeloss.invalidstring": "The string you provided cannot be applied to the config value."

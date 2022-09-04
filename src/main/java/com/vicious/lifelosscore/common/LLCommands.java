@@ -1,5 +1,6 @@
 package com.vicious.lifelosscore.common;
 
+import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -23,13 +24,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import java.util.Collection;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public class LLCommands {
     @SubscribeEvent
-
     public static void register(RegisterCommandsEvent event){
         LiteralArgumentBuilder<CommandSourceStack> cmd = Commands.literal("lifeloss")
                 .then(Commands.literal("givelives").requires((plr)-> plr.hasPermission(Commands.LEVEL_ADMINS))
@@ -40,7 +38,7 @@ public class LLCommands {
                 .then(Commands.literal("seelives").requires((p)->p.hasPermission(Commands.LEVEL_ALL))
                         .executes((ctx)->seeLives(ctx.getSource()))
                         .then(Commands.argument("targets",EntityArgument.players())
-                        .executes((ctx)->seeLives(ctx.getSource(),EntityArgument.getPlayers(ctx, "target")))))
+                                .executes((ctx)->seeLives(ctx.getSource(),EntityArgument.getPlayers(ctx, "targets")))))
                 .then(Commands.literal("team")
                         .then(Commands.literal("create")
                                 .then(Commands.argument("name", StringArgumentType.string())
@@ -53,12 +51,20 @@ public class LLCommands {
                                         .then(Commands.argument("targets",EntityArgument.players())
                                         .executes((ctx)->sendInvites(EntityArgument.getPlayers(ctx, "targets"),ctx.getSource()))))
                         )
+                        .then(Commands.literal("delete").requires(ILLPlayerData::ownsTeam)
+                                .executes((src)-> deleteTeam(src.getSource())))
                         .then(Commands.literal("info")
                                 .executes(ctx->sendTeamInfo(ctx.getSource()))
                                 .then(Commands.argument("team",StringArgumentType.string())
                                         .executes(ctx->sendTeamInfo(ctx.getSource(),StringArgumentType.getString(ctx,"team")))))
                         .then(Commands.literal("leave")
                                 .executes(ctx->leaveTeam(ctx.getSource())))
+                        .then(Commands.literal("kick").requires(ILLPlayerData::ownsTeam)
+                                .then(Commands.argument("targets", GameProfileArgument.gameProfile())
+                                        .executes(ctx->kickMembers(ctx.getSource(),StringArgumentType.getString(ctx,"team"),GameProfileArgument.getGameProfiles(ctx,"targets")))))
+                        .then(Commands.literal("promote").requires(ILLPlayerData::ownsTeam)
+                                .then(Commands.argument("target",GameProfileArgument.gameProfile())
+                                        .executes((ctx)->promote(ctx.getSource(),GameProfileArgument.getGameProfiles(ctx,"target")))))
                         .then(Commands.literal("admin").requires((p)->p.hasPermission(Commands.LEVEL_ADMINS))
                                 .then(Commands.argument("team",StringArgumentType.string())
                                         .then(Commands.literal("delete")
@@ -122,6 +128,29 @@ public class LLCommands {
 
         });
     }
+
+    private static int promote(CommandSourceStack source, Collection<GameProfile> target) {
+        if(source.getEntity() instanceof ServerPlayer sp) {
+            SyncablePlayerData.executeIfPresent(sp,pd->{
+                for (GameProfile gameProfile : target) {
+                    TeamManager.getTeam(pd.getTeamID()).setOwner(gameProfile);
+                    break;
+                }
+            },ILLPlayerData.class);
+        }
+        return 1;
+    }
+
+    private static int deleteTeam(CommandSourceStack src) {
+        if(src.getEntity() instanceof ServerPlayer) {
+            SyncablePlayerData.executeIfPresent(src.getEntity(), pd -> {
+                Team t = TeamManager.getTeam(pd.getTeamID());
+                deleteTeam(t.getName(),src);
+            }, ILLPlayerData.class);
+        }
+        return 1;
+    }
+
     private static int sendTeamInfo(CommandSourceStack source){
         try {
             if (source.getEntity() instanceof ServerPlayer sp) {
@@ -146,19 +175,29 @@ public class LLCommands {
         try {
             Team t = TeamManager.getTeam(name);
             if (t != null) {
-                StringBuilder mString = new StringBuilder("Members: ");
+                List<Object> msg = Lists.newArrayList(ChatFormatting.AQUA, ChatFormatting.BOLD, t.getName(), ChatFormatting.RESET, ChatFormatting.DARK_AQUA, "\n");
+                msg.add("Members: ");
                 int i = 0;
                 for (UUID member : t.getMembers()) {
                     Optional<GameProfile> p = ServerHelper.server.getProfileCache().get(member);
                     if (p.isPresent()) {
-                        mString.append(p.get().getName());
+                        GameProfile prof = p.get();
+                        if(prof.getId().equals(t.getOwner())){
+                            msg.add(ChatFormatting.BOLD);
+                            msg.add(prof.getName());
+                            msg.add(ChatFormatting.RESET);
+                            msg.add(ChatFormatting.DARK_AQUA);
+                        }
+                        else{
+                            msg.add(prof.getName());
+                        }
                         if (i < t.getMembers().size() - 1) {
-                            mString.append(", ");
+                            msg.add(", ");
                         }
                     }
                     i++;
                 }
-                LifelossChatMessage.from(ChatFormatting.AQUA, ChatFormatting.BOLD, t.getName(), ChatFormatting.RESET, ChatFormatting.DARK_AQUA, "\n", mString.toString()).send(source);
+                new LifelossChatMessage(msg).send(source);
             } else {
                 noSuchTeam(name, source);
             }
@@ -182,7 +221,7 @@ public class LLCommands {
                     }
                 }
                 else{
-                    LifelossChatMessage.from(ChatFormatting.DARK_RED, "<2lifeloss.notinteam>",target.getName(),t.getName());
+                    LifelossChatMessage.from(ChatFormatting.DARK_RED, "<2lifeloss.notinteam>",target.getName(),t.getName()).send(kicker);
                 }
             }
         }
@@ -242,7 +281,7 @@ public class LLCommands {
                     ILLPlayerData.get(plr).setTeamID(null);
                 }
             }
-            LifelossChatMessage.from(ChatFormatting.GOLD,"2lifeloss.deletedteam",deleter.getDisplayName(),name).send(ServerHelper.getPlayers());
+            LifelossChatMessage.from(ChatFormatting.GOLD,"<2lifeloss.deletedteam>",deleter.getDisplayName(),name).send(ServerHelper.getPlayers());
         }
         else{
             noSuchTeam(name,deleter);
@@ -266,9 +305,12 @@ public class LLCommands {
                 }
             } else {
                 Team t = TeamManager.createTeam(name);
-                LifelossChatMessage.from(ChatFormatting.GREEN, "<2lifeloss.createdteam>", stack.getDisplayName(), name).send(ServerHelper.getPlayers());
                 ServerPlayer player = stack.getPlayer();
-                if (player != null) t.addMember(player);
+                LifelossChatMessage.from(ChatFormatting.GREEN, "<2lifeloss.createdteam>", stack.getDisplayName(), name).send(ServerHelper.getPlayers());
+                if (player != null){
+                    t.setOwner(stack.getPlayer().getGameProfile());
+                    t.addMember(player);
+                }
             }
         } catch (Exception e){
             e.printStackTrace();
@@ -299,8 +341,10 @@ public class LLCommands {
         if(source.getEntity() instanceof ServerPlayer sp){
             SyncablePlayerData.executeIfPresent(sp,(pd)->{
                 if(pd.hasTeam()){
-                    BetterChatMessage alert = LifelossChatMessage.from(ChatFormatting.GOLD,"<1lifeloss.teaminvitereceived>",TeamManager.getTeam(pd.getTeamID()).getName());
+                    Team t = TeamManager.getTeam(pd.getTeamID());
+                    BetterChatMessage alert = LifelossChatMessage.from(ChatFormatting.GOLD,"<2lifeloss.teaminvitereceived>",sp.getDisplayName(),t.getName());
                     for (ServerPlayer invitee : targets) {
+                        LifelossChatMessage.from(ChatFormatting.GOLD, "<2lifeloss.teaminvitesent>",sp.getDisplayName(),invitee.getDisplayName()).send(t.getOnlineMembers());
                         SyncablePlayerData.executeIfPresent(invitee,(idat)->{
                             alert.send(invitee);
                             idat.setTeamInvite(pd.getTeamID());
@@ -335,10 +379,15 @@ public class LLCommands {
         LifelossChatMessage.from(ChatFormatting.RED, "<lifeloss.onlyplayercommand>").send(source);
     }
     private static int seeLives(CommandSourceStack source, Collection<ServerPlayer> plrs) {
-        for (ServerPlayer plr : plrs) {
-            SyncablePlayerData.executeIfPresent(source.getEntity(),pdata->{
-                LifelossChatMessage.from(ChatFormatting.GREEN, "<2lifeloss.seelivesother>", plr.getDisplayName(),""+pdata.getLives()).send(source);
-            },ILLPlayerData.class);
+        try {
+            for (ServerPlayer plr : plrs) {
+                SyncablePlayerData.executeIfPresent(plr, pdata -> {
+                    LifelossChatMessage.from(ChatFormatting.GREEN, "<2lifeloss.seelivesother>", plr.getDisplayName(), "" + pdata.getLives()).send(source);
+                }, ILLPlayerData.class);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
         }
         return 1;
     }
