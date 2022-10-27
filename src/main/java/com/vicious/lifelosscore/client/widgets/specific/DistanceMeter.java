@@ -3,37 +3,31 @@ package com.vicious.lifelosscore.client.widgets.specific;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.vicious.lifelosscore.client.gui.ClientData;
 import com.vicious.lifelosscore.common.LLFlag;
+import com.vicious.viciouscore.client.gui.widgets.RenderStage;
 import com.vicious.viciouscore.client.gui.widgets.RootWidget;
-import com.vicious.viciouscore.client.gui.widgets.WidgetRectangle;
+import com.vicious.viciouscore.client.gui.widgets.glrendered.WidgetRectangle;
 import net.minecraft.ChatFormatting;
 
 import java.awt.*;
 
-public class DistanceMeter extends SpecialTextBox {
-    protected WidgetRectangle bar;
-    public DistanceMeter(RootWidget root, int x, int y, int bdcol, float bgopa, float bdopa) {
-        super(root, x, y, Color.WHITE.getRGB(), bdcol, bgopa, bdopa, "DFC: ");
-        bar = box.addChild(new WidgetRectangle(root,x,y,0,0,Color.BLACK.getRGB(),bgopa));
+public class DistanceMeter<T extends DistanceMeter<T>> extends SpecialTextBox<T> {
+    protected WidgetRectangle<?> bar;
+    public DistanceMeter(RootWidget root, int x, int y, Color bdcol, float bgopa, float bdopa) {
+        super(root, x, y, Color.WHITE, bdcol, bgopa, bdopa, "DFC: ");
+        bar = box.addChild(new WidgetRectangle<>(root,x,y,0,0).addGL(RenderStage.SELFPRE,(s)->{
+            float unacceptability = ClientData.percentUnnacceptable();
+            bar.setHeight(box.getHeight());
+            bar.setWidth((int) (unacceptability*box.getWidth()));
+            Color c = new Color(getIntFromColor(unacceptability,1.0f-unacceptability,0));
+            shade(c,bdopa);
+        }));
     }
+
 
     @Override
     protected void renderWidget(PoseStack stack, int mouseX, int mouseY, float partialTicks) {
         super.renderWidget(stack, mouseX, mouseY, partialTicks);
-        text.setText(ChatFormatting.BLACK,ChatFormatting.BOLD,"DFC: ", ClientData.distToCenter, "m");
-    }
-
-    @Override
-    protected void doGLTransformations(PoseStack stack) {
-        super.doGLTransformations(stack);
-    }
-
-    @Override
-    public void regenerate() {
-        super.regenerate();
-        float unacceptability = ClientData.percentUnnacceptable();
-        bar.setHeight(box.getHeight());
-        bar.setWidth((int) (unacceptability*box.getWidth()));
-        bar.setRGB(getIntFromColor(unacceptability,1.0f-unacceptability,0));
+        text.setText(ChatFormatting.BLACK, ChatFormatting.BOLD, "DFC: ", ClientData.distToCenter, "m");
     }
     @Override
     public boolean visCondition() {

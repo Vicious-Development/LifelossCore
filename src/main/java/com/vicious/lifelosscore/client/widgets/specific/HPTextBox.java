@@ -7,8 +7,10 @@ import com.vicious.lifelosscore.common.LLFlag;
 import com.vicious.viciouscore.client.gui.widgets.RootWidget;
 import net.minecraft.ChatFormatting;
 
-public class HPTextBox extends SpecialTextBox{
-    public HPTextBox(RootWidget root, int x, int y, int bgcol, int bdcol, float bgopa, float bdopa) {
+import java.awt.*;
+
+public class HPTextBox<T extends HPTextBox<T>> extends SpecialTextBox<T>{
+    public HPTextBox(RootWidget root, int x, int y, Color bgcol, Color bdcol, float bgopa, float bdopa) {
         super(root, x, y, bgcol, bdcol, bgopa, bdopa, "HP");
     }
 

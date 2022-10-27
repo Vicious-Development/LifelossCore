@@ -88,6 +88,9 @@ public class LLCommands {
                                         .then(Commands.literal("kick")
                                                 .then(Commands.argument("targets", GameProfileArgument.gameProfile())
                                                         .executes(ctx->kickMembers(ctx.getSource(),StringArgumentType.getString(ctx,"team"),GameProfileArgument.getGameProfiles(ctx,"targets")))))
+                                        .then(Commands.literal("promote")
+                                                .then(Commands.argument("target",GameProfileArgument.gameProfile())
+                                                        .executes((ctx)->promote(ctx.getSource(),StringArgumentType.getString(ctx,"team"),GameProfileArgument.getGameProfiles(ctx,"target")))))
                                 )
                         ))
                 .then(Commands.literal("config").requires((p)->p.hasPermission(Commands.LEVEL_ADMINS))
@@ -137,6 +140,19 @@ public class LLCommands {
                     break;
                 }
             },ILLPlayerData.class);
+        }
+        return 1;
+    }
+    private static int promote(CommandSourceStack src,String team, Collection<GameProfile> target) {
+        Team t = TeamManager.getTeam(team);
+        if(t != null){
+            for (GameProfile gameProfile : target) {
+                t.setOwner(gameProfile);
+                break;
+            }
+        }
+        else{
+            noSuchTeam(team,src);
         }
         return 1;
     }
@@ -295,9 +311,6 @@ public class LLCommands {
                 return 1;
             }
             if (ILLPlayerData.hasTeam(stack)) {
-                SyncablePlayerData.executeIfPresent(stack, (pd) -> {
-                    System.out.println(TeamManager.getTeam(pd.getTeamID()).toString());
-                }, ILLPlayerData.class);
                 if (stack.hasPermission(Commands.LEVEL_ADMINS)) {
                     LifelossChatMessage.from(ChatFormatting.GREEN, "<1lifeloss.createdemptyteam>", name).send(stack);
                 } else {

@@ -6,8 +6,10 @@ import com.vicious.lifelosscore.common.LLFlag;
 import com.vicious.viciouscore.client.gui.widgets.RootWidget;
 import net.minecraft.ChatFormatting;
 
-public class TeamTextBox extends SpecialTextBox {
-    public TeamTextBox(RootWidget root, int x, int y, int bgcol, int bdcol, float bgopa, float bdopa, Object... bcm) {
+import java.awt.*;
+
+public class TeamTextBox<T extends SpecialTextBox<T>> extends SpecialTextBox<T> {
+    public TeamTextBox(RootWidget root, int x, int y, Color bgcol, Color bdcol, float bgopa, float bdopa, Object... bcm) {
         super(root, x, y, bgcol, bdcol, bgopa, bdopa, bcm);
     }
 

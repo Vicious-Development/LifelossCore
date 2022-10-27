@@ -18,7 +18,6 @@ public class ClientData {
     public static void setCenter(BlockPos pos){
         centerPosition = pos;
         if(Minecraft.getInstance().player != null) distToCenter = (int)Math.sqrt(centerPosition.distToCenterSqr(Minecraft.getInstance().player.position()));
-        LifelossOverlay.getInstance().distance.regenerate();
     }
 
     public static boolean hasTeam(){

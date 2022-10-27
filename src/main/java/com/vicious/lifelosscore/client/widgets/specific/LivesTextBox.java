@@ -7,15 +7,21 @@ import com.vicious.lifelosscore.common.LLFlag;
 import com.vicious.viciouscore.client.gui.widgets.RootWidget;
 import net.minecraft.ChatFormatting;
 
-public class LivesTextBox extends SpecialTextBox {
-    public LivesTextBox(RootWidget root, int x, int y, int bgcol, int bdcol, float bgopa, float bdopa) {
+import java.awt.*;
+
+public class LivesTextBox<T extends LivesTextBox<T>> extends SpecialTextBox<T> {
+    int prevlives = 0;
+    public LivesTextBox(RootWidget root, int x, int y, Color bgcol, Color bdcol, float bgopa, float bdopa) {
         super(root, x, y, bgcol, bdcol, bgopa, bdopa, "");
     }
 
     @Override
     protected void renderWidget(PoseStack stack, int mouseX, int mouseY, float partialTicks) {
         super.renderWidget(stack, mouseX, mouseY, partialTicks);
-        this.text.setText(LifeColor.of(ClientData.lives), ChatFormatting.BOLD,"Lives: " + ClientData.lives);
+        if(prevlives != ClientData.lives) {
+            this.text.setText(LifeColor.of(ClientData.lives), ChatFormatting.BOLD, "Lives: " + ClientData.lives);
+            prevlives=ClientData.lives;
+        }
     }
 
     @Override
